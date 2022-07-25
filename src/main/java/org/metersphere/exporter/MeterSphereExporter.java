@@ -1,5 +1,6 @@
 package org.metersphere.exporter;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.gson.Gson;
 import com.intellij.openapi.diagnostic.Logger;
@@ -23,6 +24,7 @@ import org.metersphere.state.AppSettingState;
 import org.metersphere.utils.HttpFutureUtils;
 import org.metersphere.utils.MSApiUtil;
 import org.metersphere.utils.ProgressUtil;
+import org.metersphere.utils.PsiTypeUtilExt;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -47,6 +49,8 @@ public class MeterSphereExporter implements IExporter {
             throw new RuntimeException(PluginConstants.EXCEPTIONCODEMAP.get(1));
         }
         List<PsiJavaFile> files = new LinkedList<>();
+
+        System.out.println("files:===>" + JSON.toJSONString(files));
         postmanExporter.getFile(psiElement, files);
         files = files.stream().filter(f ->
                 f instanceof PsiJavaFile
@@ -55,9 +59,12 @@ public class MeterSphereExporter implements IExporter {
             throw new RuntimeException(PluginConstants.EXCEPTIONCODEMAP.get(2));
         }
         List<PostmanModel> postmanModels = postmanExporter.transform(files, false, true, appSettingService.getState());
+
+        System.out.println("postmanModels===>" + JSON.toJSON(postmanModels));
         if (postmanModels.size() == 0) {
             throw new RuntimeException(PluginConstants.EXCEPTIONCODEMAP.get(3));
         }
+        // 生成postman格式文件，进行导入
         File temp = File.createTempFile(UUID.randomUUID().toString(), null);
         BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(temp));
         JSONObject jsonObject = new JSONObject();
@@ -82,6 +89,7 @@ public class MeterSphereExporter implements IExporter {
         }
         if (temp.exists()) {
             temp.delete();
+
         }
         return r;
     }
