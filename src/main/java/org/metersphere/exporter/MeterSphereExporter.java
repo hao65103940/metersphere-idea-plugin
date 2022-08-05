@@ -50,7 +50,6 @@ public class MeterSphereExporter implements IExporter {
         }
         List<PsiJavaFile> files = new LinkedList<>();
 
-        System.out.println("files:===>" + JSON.toJSONString(files));
         postmanExporter.getFile(psiElement, files);
         files = files.stream().filter(f ->
                 f instanceof PsiJavaFile
@@ -58,6 +57,7 @@ public class MeterSphereExporter implements IExporter {
         if (files.size() == 0) {
             throw new RuntimeException(PluginConstants.EXCEPTIONCODEMAP.get(2));
         }
+        logger.info("files:===>" + JSON.toJSONString(files));
         List<PostmanModel> postmanModels = postmanExporter.transform(files, false, true, appSettingService.getState());
 
         System.out.println("postmanModels===>" + JSON.toJSON(postmanModels));
@@ -121,6 +121,7 @@ public class MeterSphereExporter implements IExporter {
             }
         } catch (Exception e) {
             logger.error("上传至 MS 失败！", e);
+            e.printStackTrace();
         } finally {
             if (response != null) {
                 try {

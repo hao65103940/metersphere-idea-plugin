@@ -1,10 +1,12 @@
 package org.metersphere.exporter;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
+import com.intellij.icons.AllIcons;
 import com.intellij.lang.jvm.annotation.JvmAnnotationAttribute;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
@@ -321,6 +323,8 @@ public class PostmanExporter implements IExporter {
                 }
             }
         });
+        System.out.println("modelsList==>"+JSON.toJSON(models));
+        logger.info("modelsList==>"+JSON.toJSON(models));
         return models;
     }
 
@@ -448,7 +452,6 @@ public class PostmanExporter implements IExporter {
                 Map<String, CommentTagEnum> commentTagMap = CommentTagEnum.allTagMap();
                 PsiComment psiComment = (PsiComment) child;
                 String text = psiComment.getText();
-                System.out.println(text);
                 if (text.startsWith("/**") && text.endsWith("*/")) {
                     String[] lines = text.replaceAll("\r", "").split("\n");
                     for (String line : lines) {
@@ -1015,11 +1018,12 @@ public class PostmanExporter implements IExporter {
         } else {
             jsonSchema.put("items", items);
         }
+        System.out.println("jsonSchema:====>" + JSON.toJSONString(jsonSchema));
         resultMap.put("schema", JSONObject.toJSONString(jsonSchema, SerializerFeature.PrettyFormat));
         if (Optional.ofNullable(resultMap.get("raw")).isEmpty()) {
             resultMap.put("raw", JSONObject.toJSONString(param, SerializerFeature.PrettyFormat));
         }
-        System.out.println("resultMap===>" + resultMap);
+        System.out.println("resultMap===>" + JSON.toJSONString(resultMap));
         // 动作执行完之后之后清除缓存
         PsiTypeUtilExt.clearGeneric();
 
