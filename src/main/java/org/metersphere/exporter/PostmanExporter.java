@@ -21,6 +21,7 @@ import com.intellij.psi.impl.source.PsiClassReferenceType;
 import com.intellij.psi.javadoc.PsiDocTag;
 import com.intellij.psi.javadoc.PsiDocToken;
 import com.intellij.psi.search.GlobalSearchScope;
+import com.intellij.psi.util.PsiMethodUtil;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.util.PsiTypesUtil;
 import de.plushnikov.intellij.lombok.util.PsiAnnotationUtil;
@@ -29,6 +30,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.metersphere.AppSettingService;
 import org.metersphere.constants.CommentTagEnum;
+import org.metersphere.constants.HeadMappingConstants;
 import org.metersphere.constants.PluginConstants;
 import org.metersphere.constants.SpringMappingConstants;
 import org.metersphere.model.PostmanModel;
@@ -194,6 +196,7 @@ public class PostmanExporter implements IExporter {
                         //注解
                         Optional<PsiAnnotation> mapO = findMappingAnn(e1, PsiAnnotation.class);
 
+
                         if (mapO.isPresent()) {
                             PostmanModel.ItemBean itemBean = new PostmanModel.ItemBean();
                             //方法名称
@@ -213,6 +216,9 @@ public class PostmanExporter implements IExporter {
 
                             urlBean.setHost("{{" + e1.getProject().getName() + "}}");
                             String urlStr = Optional.ofNullable(getUrlFromAnnotation(e1)).orElse("");
+                            // 把方法上的url缓存起来
+                            CacheMethodUtils.addData(urlStr);
+
                             urlBean.setPath(getPath(urlStr, basePath));
                             urlBean.setQuery(getQuery(e1, requestBean, paramJavaDoc));
                             urlBean.setVariable(getVariable(urlBean.getPath(), paramJavaDoc));
@@ -323,8 +329,6 @@ public class PostmanExporter implements IExporter {
                 }
             }
         });
-        System.out.println("modelsList==>"+JSON.toJSON(models));
-        logger.info("modelsList==>"+JSON.toJSON(models));
         return models;
     }
 
@@ -444,8 +448,6 @@ public class PostmanExporter implements IExporter {
         if (!state.isJavadoc()) {
             return resultList.toString();
         }
-//        Collection<PsiDocToken> tokens = PsiTreeUtil.findChildrenOfType(e1.getDocComment(), PsiDocToken.class);
-
         PsiElement[] children = e1.getChildren();
         for (PsiElement child : children) {
             if (child instanceof PsiComment) {
@@ -488,25 +490,6 @@ public class PostmanExporter implements IExporter {
                 }
             }
         }
-//
-//        if (tokens.size() > 0) {
-//            Iterator<PsiDocToken> iterator = tokens.iterator();
-//            while (iterator.hasNext()) {
-//                PsiDocToken token = iterator.next();
-//                // 拿到所有的注释
-//                if ("DOC_COMMENT_DATA".equalsIgnoreCase(token.getTokenType().toString())) {
-//                    if (StringUtils.isNotBlank(token.getText())) {
-//                        apiName = UTF8Util.toUTF8String(token.getText()).trim();
-//                        resultList.add(apiName);
-//                    }
-////                    break;
-//                }
-//            }
-//            // 如果存在JAVADOC，移除第一个
-//            if (resultList.size() > 1) {
-//                resultList.remove(0);
-//            }
-//        }
         return resultList.stream().collect(Collectors.joining(";"));
     }
 
@@ -921,95 +904,6 @@ public class PostmanExporter implements IExporter {
         JSONArray items = new JSONArray();
         String basePath = "#/properties";
         String baseItemsPath = "#/items";
-        //这个判断对多层集合嵌套的数据类型
-//        if (psiClass != null) {
-//            //普通类型
-//            if (PluginConstants.simpleJavaType.contains(javaType)) {
-//                resultMap.put("raw", PluginConstants.simpleJavaTypeValue.get(javaType));
-//                properties.put(paramName, createProperty(PluginConstants.simpleJavaTypeJsonSchemaMap.get(javaType), psiClass, null, basePath + "/" + paramName));
-//            } else {
-//                //对象类型
-//                PsiField[] fields = psiClass.getAllFields();
-//                for (PsiField field : fields) {
-//                    if (skipJavaTypes.contains(field.getName().toLowerCase()))
-//                        continue;
-//                    //简单对象
-//                    if (PluginConstants.simpleJavaType.contains(field.getType().getCanonicalText())) {
-//                        param.put(field.getName(), PluginConstants.simpleJavaTypeValue.get(field.getType().getCanonicalText()));
-//                        properties.put(field.getName(), createProperty(PluginConstants.simpleJavaTypeJsonSchemaMap.get(field.getType().getCanonicalText()), field, null, basePath + "/" + field.getName()));
-//                    }
-//                    //这个判断对多层集合嵌套的数据类型
-//                    else {
-//                        //复杂对象
-//                        //容器
-//                        if (PsiTypeUtil.isCollection(field.getType())) { // Test->List<Test>
-//                            param.put(field.getName(), new ArrayList<>() {{
-//                                JSONObject item = createProperty("array", field, null, basePath + "/" + field.getName());
-//                                JSONArray items = new JSONArray();
-//                                JSONObject obj = null;
-//                                JSONObject prop = new JSONObject();
-//                                String javaType = ((PsiClassReferenceType) field.getType()).getParameters()[0].getCanonicalText();
-//                                if (PluginConstants.simpleJavaType.contains(javaType)) {
-//                                    obj = createProperty(PluginConstants.simpleJavaTypeJsonSchemaMap.get(javaType), PsiTypesUtil.getPsiClass(((PsiClassReferenceType) field.getType()).getParameters()[0]), null, basePath + "/" + field.getName() + "/items");
-//                                } else {
-//                                    obj = createProperty("object", field, null, basePath + "/" + field.getName() + "/items");
-//                                    obj.put("properties", prop);
-//                                }
-//                                items.add(obj);
-//                                item.put("items", items);
-//                                add(getFields(PsiTypeUtil.getPsiClass(field, "collection"), curDeepth, maxDeepth, prop, basePath + "/" + field.getName()));
-//                                properties.put(field.getName(), item);
-//                            }});
-//                        } else if (field.getType().getCanonicalText().contains("[]")) {//数组
-//                            param.put(field.getName(), getJSONArray(field.getType(), curDeepth, maxDeepth, items, basePath + "/" + field.getName() + "/items", project));
-//                            properties.put(field.getName(), createProperty("array", field, items, basePath + "/" + field.getName()));
-//                        } else if (PsiTypeUtil.isMap(field.getType())) {
-//                            setRawMap(param, field);
-//                        } else {//普通对象
-//                            JSONObject item = createProperty("object", field, null, "/" + field.getName());
-//                            JSONObject pros = new JSONObject();
-//                            item.put("properties", pros);
-//                            param.put(field.getName(), getFields(PsiTypeUtil.getPsiClass(field, "pojo"), curDeepth, maxDeepth, pros, basePath + "/" + field.getName()));
-//                            properties.put(field.getName(), item);
-//                        }
-//                    }
-//                }
-//            }
-//        } else {
-//            //复杂对象
-//            //容器
-////            if (PsiTypeUtil.isCollection(pe)) {// List<Test>
-////                resultMap.put("raw", getJSONArray(pe, curDeepth, maxDeepth, items, baseItemsPath, project).toJSONString());
-////            } else
-//            // 数组
-//            if (javaType.contains("[]"))//数组 String[]
-//            {
-//                resultMap.put("raw", getJSONArray(pe, curDeepth, maxDeepth, items, baseItemsPath, project).toJSONString());
-//            }
-//            // Map
-//            if (PsiTypeUtil.isMap(pe)) {
-//                getRawMap(param, pe, properties, basePath);
-//            }
-//
-//            // 泛型
-//            if (PsiTypeUtil.isGenericType(pe)) { // RequestDTO<UserInfnEntity>  泛型解析 eg:  List<Test>
-//                // 判断是否是List<T>
-//                if (PsiTypeUtilExt.isPsiTypeFromList(pe, project) && ((PsiClassReferenceType) pe).getParameters().length == 1) {
-//                    PsiType[] parameters = ((PsiClassReferenceType) pe).getParameters();
-//                    PsiClass psiClass1 = PsiTypesUtil.getPsiClass(parameters[0]);
-//                    resultMap.put("raw", getJSONArray(pe, 1, 1, items, baseItemsPath, project).toJSONString());
-//                    JSONObject object = createProperty("object", psiClass1, null, basePath + "/" + psiClass1.getName() + "/items");
-//                    JSONObject pros = new JSONObject();
-//                    getFields(psiClass1, curDeepth, maxDeepth, pros, baseItemsPath + "/properties");
-//                    object.put("properties", pros);
-//                    items.add(object);
-//                } else {
-//                    //泛型嵌套解析
-//                    getGeneric(param, pe, paramName, properties, basePath, project);
-//                }
-//
-//            }
-//        }
 
         this.resolveByPsiType(paramName, pe, project, properties, resultMap, basePath, baseItemsPath, items, curDeepth, maxDeepth, param);
 
@@ -1018,12 +912,12 @@ public class PostmanExporter implements IExporter {
         } else {
             jsonSchema.put("items", items);
         }
-        System.out.println("jsonSchema:====>" + JSON.toJSONString(jsonSchema));
+        logger.info("jsonSchema:====>" + JSON.toJSONString(jsonSchema));
         resultMap.put("schema", JSONObject.toJSONString(jsonSchema, SerializerFeature.PrettyFormat));
         if (Optional.ofNullable(resultMap.get("raw")).isEmpty()) {
             resultMap.put("raw", JSONObject.toJSONString(param, SerializerFeature.PrettyFormat));
         }
-        System.out.println("resultMap===>" + JSON.toJSONString(resultMap));
+        logger.info("resultMap===>" + JSON.toJSONString(resultMap));
         // 动作执行完之后之后清除缓存
         PsiTypeUtilExt.clearGeneric();
 
@@ -1106,15 +1000,6 @@ public class PostmanExporter implements IExporter {
                     items.add(item);
                 }
                 param.put("raw", items);
-//                resultMap.put("raw", getJSONArray(psiFieldType, 1, 1, items, baseItemsPath, project).toJSONString());
-//                String qualifiedName = psiFieldType.getDeepComponentType().getCanonicalText();
-//                if (!PluginConstants.simpleJavaType.contains(qualifiedName)) {
-//                    JSONObject object = createProperty("object", PsiTypesUtil.getPsiClass(psiFieldType), null, basePath + "/" + psiClass1.getName() + "/items");
-//                    JSONObject pros = new JSONObject();
-//                    getFields(psiClass1, curDeepth, maxDeepth, pros, baseItemsPath + "/properties");
-//                    object.put("properties", pros);
-//                    items.add(object);
-//                }
                 return;
             }
 //
@@ -1145,7 +1030,6 @@ public class PostmanExporter implements IExporter {
             if ((psiClass != null || !PsiTypeUtilExt.isPsiTypeFromParameter(psiFieldType)) && !PsiTypeUtilExt.isPsiTypeFromList(psiFieldType, project)) { //
                 Object generic = this.getGeneric(param, psiFieldType, paramName, properties, basePath, project, curDeepth, maxDeepth, items);
                 param.put("raw", generic);
-                System.out.println(generic);
             }
 
 
@@ -1193,6 +1077,12 @@ public class PostmanExporter implements IExporter {
         pro.put("mock", mock);
     }
 
+    private void setMockObj(JSONObject pro, String value) {
+        JSONObject mock = new JSONObject();
+        mock.put("mock", value);
+        pro.put("mock", mock);
+    }
+
     /**
      * 构建类中属性的对象
      *
@@ -1209,6 +1099,8 @@ public class PostmanExporter implements IExporter {
         if (StringUtils.isNotBlank(description) && !PluginConstants.simpleJavaType.contains(pe.getName()) && !StringUtils.equalsIgnoreCase(description, pe.getName())) {
             pro.put("description", description);
         }
+
+
         if (items != null) {
             pro.put("items", items);
         }
@@ -1216,8 +1108,16 @@ public class PostmanExporter implements IExporter {
         pro.put("$id", id);
         pro.put("hidden", true);
         setMockObj(pro);
-        // 获取自定义类注解的值，目前只支持定义的几种注解
+
+        // -----start 获取自定义类注解的值，目前只支持定义的几种注解-----
         getCustomAnnotationValue(pe, pro);
+        // -----end-----
+
+        // -----start 添加head属性值-----
+        setHeadDescription(pe, pro);
+        // -----end-----
+
+
         return pro;
     }
 
@@ -1234,6 +1134,45 @@ public class PostmanExporter implements IExporter {
         for (PsiAnnotation psa : annotations) {
             CustomAnnotationHolderFactory.getAnnotation(psa, pro, pe);
         }
+    }
+
+
+    /**
+     * 获取JSONField注解name
+     *
+     * @param psiField
+     * @return
+     */
+    private String getNameValueByJsonField(PsiField psiField) {
+        PsiAnnotation[] annotations = psiField.getAnnotations();
+        for (PsiAnnotation psa : annotations) {
+            if (StringUtils.contains(psa.getQualifiedName(), "com.alibaba.fastjson.annotation.JSONField")) {
+                return PsiAnnotationUtil.getAnnotationValue(psa, "name", String.class);
+            }
+        }
+        return psiField.getName();
+    }
+
+
+    /**
+     * 设置head 属性值
+     *
+     * @param pe
+     * @param jsonObject
+     */
+    private void setHeadDescription(PsiField pe, JSONObject jsonObject) {
+        String valueByKey = HeadMappingConstants.getValueByKey(pe.getName());
+        String description = jsonObject.getString("description");
+        if (StringUtils.isNotBlank(valueByKey) && StringUtils.isBlank(description)) {
+            jsonObject.put("description", valueByKey);
+        }
+
+        // 默认赋值为方法的url
+        if ("reqTxnCode".equalsIgnoreCase(pe.getName())) {
+            String methodUrl = CacheMethodUtils.getData();
+            setMockObj(jsonObject, methodUrl);
+        }
+
     }
 
     private void setRawMap(LinkedHashMap param, PsiField field) {
@@ -1302,9 +1241,8 @@ public class PostmanExporter implements IExporter {
 
         // 解析类的泛型类的信息
         PsiTypeUtilExt.resolvePsiClassParameter((PsiClassType) type);
-        // 获取类中所有属性包含继承
+        // 获取类中所有属性包含继承的属性
         PsiField[] fields = PsiClassUtil.getAllFieldsByPsiClass(outerClass);
-//        PsiField fields[] = outerClass.getAllFields(); // String head ,T body,List<String>,
         for (PsiField f : fields) {
             PsiClass filedClass = PsiTypesUtil.getPsiClass(f.getType());
             if (filedClass == null && !f.getType().getCanonicalText().contains("[]")) {
@@ -1314,8 +1252,9 @@ public class PostmanExporter implements IExporter {
                 if (PluginConstants.simpleJavaType.contains(filedClass.getQualifiedName())) {
                     param.put(f.getName(), PluginConstants.simpleJavaTypeValue.get(filedClass.getQualifiedName()));
                     JSONObject item = createProperty(PluginConstants.simpleJavaTypeJsonSchemaMap.get(filedClass.getQualifiedName()), f, null, parentPath + "/" + f.getName());
-                    properties.put(f.getName(), item);
-//                    properties.put(f.getName(), getFields(filedClass, 1, 2, item, parentPath + "/" + paramName + "/" + f.getName()));
+                    // 判断注解JSONField
+                    String nameValueByJsonField = this.getNameValueByJsonField(f);
+                    properties.put(nameValueByJsonField, item);
                 } else {
                     // 其他类型
 
@@ -1330,18 +1269,18 @@ public class PostmanExporter implements IExporter {
                             JSONObject array = createProperty("array", filedClass, jsonArray, "#/items/" + f.getName());
                             String qualifiedName = psiClass1.getQualifiedName();
                             if (PluginConstants.simpleJavaType.contains(qualifiedName)) {// String
-//                                JSONObject object = new JSONObject();
-//                                object.put(f.getName(), PluginConstants.simpleJavaTypeValue.get(qualifiedName));
                                 JSONObject item = createProperty(PluginConstants.simpleJavaTypeJsonSchemaMap.get(qualifiedName), f, null, parentPath + "/" + f.getName());
                                 jsonArray.add(item);
-                                properties.put(f.getName(), array);
+                                String nameValueByJsonField = this.getNameValueByJsonField(f);
+                                properties.put(nameValueByJsonField, array);
                             } else {
                                 LinkedHashMap<String, Object> paramTemp = new LinkedHashMap<>();
                                 Object generic = this.getGeneric(paramTemp, parameters[0], psiClass1.getName(), new JSONObject(), "#/items", project, curDeepth + 1, maxDeepth, new JSONArray());
                                 JSONObject item = createProperty("object", f, null, parentPath + "/" + f.getName());
                                 item.put("properties", generic);
                                 jsonArray.add(item);
-                                properties.put(f.getName(), array);
+                                String nameValueByJsonField = this.getNameValueByJsonField(f);
+                                properties.put(nameValueByJsonField, array);
                                 param.put("raw", jsonArray);
                             }
                         }
@@ -1355,7 +1294,8 @@ public class PostmanExporter implements IExporter {
                             Object generic = this.getGeneric(new LinkedHashMap<>(), realPsiType, bodyClass.getName(), new JSONObject(), parentPath, project, curDeepth + 1, maxDeepth, new JSONArray());
                             JSONObject item = createProperty("object", bodyClass, null, parentPath + "/" + bodyClass.getName());
                             item.put("properties", generic);
-                            properties.put(f.getName(), item);
+                            String nameValueByJsonField = this.getNameValueByJsonField(f);
+                            properties.put(nameValueByJsonField, item);
 //                            param.put(f.getName(), getFields(bodyClass, 1, 2, pros, parentPath + "/" + paramName + "/" + f.getName()));
                             if (org.apache.commons.collections.CollectionUtils.isNotEmpty(CustomAnnotationHolderFactory.getGenericList())) {
                                 // 添加必填字段
@@ -1372,37 +1312,10 @@ public class PostmanExporter implements IExporter {
                             JSONObject pros = new JSONObject();
                             Object generic = this.getGeneric(new LinkedHashMap<>(), f.getType(), filedClass.getName(), pros, parentPath, project, curDeepth + 1, maxDeepth, new JSONArray());
                             item.put("properties", generic);
-                            properties.put(f.getName(), item);
+                            String nameValueByJsonField = this.getNameValueByJsonField(f);
+                            properties.put(nameValueByJsonField, item);
                         }
                     }
-//                    if (genericCount == 0) {
-//                        JSONObject item = createProperty("array", filedClass, null, parentPath + "/" + f.getName());
-//                        JSONObject pros = new JSONObject();
-//                        item.put("properties", pros);
-//                        properties.put(f.getName(), item);
-//                        PsiType genericType = getGenericClass(type, filedClass);
-//                        if (genericType == null) {
-//                            continue;
-//                        }
-//                        if (PsiTypeUtil.isCollection(genericType)) {
-//                            JSONArray items = new JSONArray();
-//                            item.put("items", items);
-//                            param.put(f.getName(), getJSONArray(genericType, 1, 2, items, parentPath + "/" + f.getName() + "/items", f.getProject()));
-//                        } else if (PsiTypeUtil.isGenericType(genericType)) {
-//                            param.put(f.getName(), getFields(PsiTypesUtil.getPsiClass(genericType), 1, 2, pros, parentPath + "/" + f.getName() + "/properties"));
-//                        }
-//                    } else {
-//                        PsiType genericTypes = getGenericClass(type, filedClass);
-//                        PsiClass bodyClass = PsiTypesUtil.getPsiClass(genericTypes);
-//                        JSONObject item = createProperty("object", bodyClass, null, parentPath + "/" + bodyClass.getName());
-//                        System.out.println("item==>" + item);
-//                        JSONObject pros = new JSONObject();
-//                        item.put("properties", pros);
-//                        properties.put(f.getName(), item);
-//                        System.out.println("properties===>" + properties);
-//                        param.put(f.getName(), getFields(bodyClass, 1, 2, pros, parentPath + "/" + paramName + "/" + f.getName()));
-//                        System.out.println("param===>" + param);
-//                    }
                 }
             } else {
 
@@ -1415,9 +1328,9 @@ public class PostmanExporter implements IExporter {
                     JSONObject array = createProperty("array", f, jsonArray, "#/items/" + componentType);
                     String canonicalText = componentType.getCanonicalText();
                     if (PluginConstants.simpleJavaType.contains(canonicalText)) {
-//            resultMap.put("raw", PluginConstants.simpleJavaTypeValue.get(canonicalText));
                         jsonArray.add(createProperty(PluginConstants.simpleJavaTypeJsonSchemaMap.get(canonicalText), f, null, parentPath + "/" + paramName));
-                        properties.put(f.getName(), array);
+                        String nameValueByJsonField = this.getNameValueByJsonField(f);
+                        properties.put(nameValueByJsonField, array);
                     } else {
                         LinkedHashMap<String, Object> paramTemp = new LinkedHashMap<>();
                         PsiClass psiClass = PsiTypesUtil.getPsiClass(componentType);
@@ -1425,11 +1338,10 @@ public class PostmanExporter implements IExporter {
                         JSONObject item = createProperty("object", f, null, parentPath + "/" + f.getName());
                         item.put("properties", generic);
                         jsonArray.add(item);
-                        properties.put(f.getName(), array);
+                        String nameValueByJsonField = this.getNameValueByJsonField(f);
+                        properties.put(nameValueByJsonField, array);
                         param.put("raw", jsonArray);
                     }
-//                    param.put("raw", getJSONArray(componentType, curDeepth, maxDeepth, items, "#/items/", project).toJSONString());
-
                 }
 
                 // map

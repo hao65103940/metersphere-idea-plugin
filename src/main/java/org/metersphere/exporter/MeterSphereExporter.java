@@ -2,6 +2,7 @@ package org.metersphere.exporter;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.google.gson.Gson;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.psi.PsiElement;
@@ -57,10 +58,9 @@ public class MeterSphereExporter implements IExporter {
         if (files.size() == 0) {
             throw new RuntimeException(PluginConstants.EXCEPTIONCODEMAP.get(2));
         }
-        logger.info("files:===>" + JSON.toJSONString(files));
         List<PostmanModel> postmanModels = postmanExporter.transform(files, false, true, appSettingService.getState());
 
-        System.out.println("postmanModels===>" + JSON.toJSON(postmanModels));
+        logger.info("postmanModels===>" + JSON.toJSON(postmanModels));
         if (postmanModels.size() == 0) {
             throw new RuntimeException(PluginConstants.EXCEPTIONCODEMAP.get(3));
         }
