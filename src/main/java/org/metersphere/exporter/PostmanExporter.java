@@ -1269,8 +1269,8 @@ public class PostmanExporter implements IExporter {
                             JSONObject array = createProperty("array", filedClass, jsonArray, "#/items/" + f.getName());
                             String qualifiedName = psiClass1.getQualifiedName();
                             if (PluginConstants.simpleJavaType.contains(qualifiedName)) {// String
-                                JSONObject item = createProperty(PluginConstants.simpleJavaTypeJsonSchemaMap.get(qualifiedName), f, null, parentPath + "/" + f.getName());
-                                jsonArray.add(item);
+//                                JSONObject item = createProperty(PluginConstants.simpleJavaTypeJsonSchemaMap.get(qualifiedName), f, null, parentPath + "/" + f.getName());
+//                                jsonArray.add(item);
                                 String nameValueByJsonField = this.getNameValueByJsonField(f);
                                 properties.put(nameValueByJsonField, array);
                             } else {
