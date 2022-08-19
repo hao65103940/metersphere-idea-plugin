@@ -474,7 +474,7 @@ public class PostmanExporter implements IExporter {
                             if (tagValArray.length > 1) {
                                 tagVal = line.substring(tag.length()).trim();
                             }
-                            tag = tag.substring(1).split(":")[0];
+                            tag = tag.substring(1).split(":|：")[0];
                             //
                             if (commentTagMap.containsKey(tag.toLowerCase()) && StringUtils.isNotBlank(tagVal)) {
                                 resultList.add(tagVal);
@@ -490,7 +490,7 @@ public class PostmanExporter implements IExporter {
                 }
             }
         }
-        return resultList.stream().collect(Collectors.joining(";"));
+        return resultList.stream().map(UTF8Util::toUTF8String).collect(Collectors.joining(";"));
     }
 
     private List<PostmanModel.ItemBean.RequestBean.BodyBean.FormDataBean> getFromdata(List<FormDataBean> formdata, PsiParameter pe, PsiMethod psiMethod) {
