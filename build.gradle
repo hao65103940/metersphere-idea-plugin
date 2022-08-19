@@ -6,7 +6,7 @@ plugins {
 }
 
 group 'org.intellij.sdk'
-version '1.0.10-fg'
+version '1.0.10-fg-fix'
 
 sourceCompatibility = 11
 repositories {
@@ -40,6 +40,10 @@ patchPluginXml {
 
 runIde {
     jvmArgs '-Xmx2G'
+}
+
+tasks.withType(JavaCompile){
+    options.encoding="UTF-8";
 }
 
 //d
