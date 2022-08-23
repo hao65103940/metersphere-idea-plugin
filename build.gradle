@@ -6,7 +6,7 @@ plugins {
 }
 
 group 'org.intellij.sdk'
-version '1.0.10-fg-fix'
+version '1.0.11-fg'
 
 sourceCompatibility = 11
 repositories {
@@ -26,17 +26,18 @@ dependencies {
 intellij {
     version = '2020.3.2'
     plugins = ['com.intellij.java']
+    updateSinceUntilBuild=false
 }
 
 buildSearchableOptions {
     enabled = false
 }
 
-patchPluginXml {
-    version = project.version
-    sinceBuild = '193.*'
-    untilBuild = '221.*'
-}
+//patchPluginXml {
+//    version = project.version
+//    sinceBuild = '193.*'
+//    untilBuild = '221.*'
+//}
 
 runIde {
     jvmArgs '-Xmx2G'

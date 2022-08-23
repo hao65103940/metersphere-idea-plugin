@@ -22,8 +22,6 @@ public class BaseTypeUtil {
         }
         String qName = psiType.getCanonicalText(); // 全限定名 java.lang.String
         String typeName = psiType.getPresentableText();  // 类型全名  String
-        System.out.println(qName);
-        System.out.println(typeName);
         return isBaseType(typeName) || typeIsObject(typeName);
     }
 

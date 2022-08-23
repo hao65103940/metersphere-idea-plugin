@@ -477,10 +477,10 @@ public class PostmanExporter implements IExporter {
                             tag = tag.substring(1).split(":|：")[0];
                             //
                             if (commentTagMap.containsKey(tag.toLowerCase()) && StringUtils.isNotBlank(tagVal)) {
-                                resultList.add(tagVal);
+                                resultList.add(UTF8Util.toUTF8String(tagVal).trim());
                             }
                         } else {
-                            resultList.add(line);
+                            resultList.add(UTF8Util.toUTF8String(line).trim());
                         }
                     }
                 }
@@ -490,7 +490,7 @@ public class PostmanExporter implements IExporter {
                 }
             }
         }
-        return resultList.stream().map(UTF8Util::toUTF8String).collect(Collectors.joining(";"));
+        return resultList.stream().collect(Collectors.joining(";"));
     }
 
     private List<PostmanModel.ItemBean.RequestBean.BodyBean.FormDataBean> getFromdata(List<FormDataBean> formdata, PsiParameter pe, PsiMethod psiMethod) {
@@ -1025,7 +1025,6 @@ public class PostmanExporter implements IExporter {
             if (PsiTypeUtil.isMap(psiFieldType)) {
                 getRawMap(param, psiFieldType, properties, basePath);
             }
-
             // 对象/泛型
             if ((psiClass != null || !PsiTypeUtilExt.isPsiTypeFromParameter(psiFieldType)) && !PsiTypeUtilExt.isPsiTypeFromList(psiFieldType, project)) { //
                 Object generic = this.getGeneric(param, psiFieldType, paramName, properties, basePath, project, curDeepth, maxDeepth, items);
@@ -1164,7 +1163,7 @@ public class PostmanExporter implements IExporter {
         String valueByKey = HeadMappingConstants.getValueByKey(pe.getName());
         String description = jsonObject.getString("description");
         if (StringUtils.isNotBlank(valueByKey) && StringUtils.isBlank(description)) {
-            jsonObject.put("description", valueByKey);
+            jsonObject.put("description", UTF8Util.toUTF8String(valueByKey).trim());
         }
 
         // 默认赋值为方法的url
