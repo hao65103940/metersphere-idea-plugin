@@ -2,10 +2,8 @@ package org.metersphere.constants;
 
 import com.alibaba.fastjson.JSONObject;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.math.BigDecimal;
+import java.util.*;
 
 public class PluginConstants {
     public static final String EXPORTER_MS = "MeterSphere";
@@ -36,6 +34,10 @@ public class PluginConstants {
         add("com.google.gson.JsonObject");
         add("Map");
         add("java.util.Map");
+        add("BigDecimal");
+        add("java.math.BigDecimal");
+        add("java.util.Date");
+        add("java.sql.Date");
     }};
 
     public static final Map<String, Object> simpleJavaTypeValue = new HashMap<>() {{
@@ -63,6 +65,10 @@ public class PluginConstants {
         put("JsonObject", new JSONObject());
         put("java.util.Map", new JSONObject());
         put("Map", new JSONObject());
+        put("BigDecimal",new BigDecimal(0));
+        put("java.math.BigDecimal",new BigDecimal(0));
+        put("java.util.Date",new Date());
+        put("java.sql.Date",new java.sql.Date(System.currentTimeMillis()));
     }};
 
     public static final Map<String, String> simpleJavaTypeJsonSchemaMap = new HashMap<>() {{
@@ -90,6 +96,10 @@ public class PluginConstants {
         put("JsonObject", "object");
         put("java.util.Map", "object");
         put("Map", "object");
+        put("java.math.BigDecimal","number");
+        put("BigDecimal","number");
+        put("java.util.Date","string");
+        put("java.sql.Date","string");
     }};
 
     public static final List<String> javaBaseCollectionType = new ArrayList<>() {

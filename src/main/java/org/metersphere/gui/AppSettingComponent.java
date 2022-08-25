@@ -1,8 +1,10 @@
 package org.metersphere.gui;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.ui.Messages;
 import lombok.Data;
@@ -18,7 +20,9 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.metersphere.utils.CollectionUtils;
 
@@ -49,17 +53,36 @@ public class AppSettingComponent {
     private Gson gson = new Gson();
     private Logger logger = Logger.getInstance(AppSettingComponent.class);
 
+
+    private static final Map<String, Object> CONCURRENT_HASHMAP = new ConcurrentHashMap<>();
+
+    private static final String OLD_APPSETTING_CONFIG = "oldAppSettingConfig";
+    private static final String OLD_WORKSPACE_CONFIG = "oldWorksapceConfig";
+    private static final String OLD_PROJECT_CONFIG = "oldProjectConfig";
+    private static final String OLD_MODULE_CONFIG = "oldModuleConfig";
+
+
+    {
+        PropertiesComponent.getInstance().setValue(OLD_APPSETTING_CONFIG, JSON.toJSONString(appSettingService.getState()));
+    }
+
+    private static AppSettingState getOldAppSetting() {
+        return JSON.parseObject(PropertiesComponent.getInstance().getValue(OLD_APPSETTING_CONFIG), AppSettingState.class);
+    }
+
     public AppSettingComponent() {
         AppSettingState appSettingState = appSettingService.getState();
-
         initData(appSettingState);
-
         testCon.addActionListener(actionEvent -> {
             if (test(appSettingState)) {
-                if (initWorkSpaceWithProject())
+                if (initWorkSpaceWithProject()) {
+                    workspaceCB.setSelectedItem(CONCURRENT_HASHMAP.get(OLD_WORKSPACE_CONFIG));
+                    projectCB.setSelectedItem(CONCURRENT_HASHMAP.get(OLD_PROJECT_CONFIG));
+                    moduleCB.setSelectedItem(CONCURRENT_HASHMAP.get(OLD_MODULE_CONFIG));
                     Messages.showInfoMessage("sync success!", "Info");
-                else
+                } else {
                     Messages.showInfoMessage("sync fail!", "Info");
+                }
             } else {
                 Messages.showInfoMessage("connect fail!", "Info");
             }
@@ -256,6 +279,9 @@ public class AppSettingComponent {
         this.projectCB.removeAllItems();
         for (MSProject s : appSettingState.getProjectOptions()) {
             this.projectCB.addItem(s);
+            if (StringUtils.equalsIgnoreCase(s.getId(), getOldAppSetting().getProject().getId())) {
+                CONCURRENT_HASHMAP.put(OLD_PROJECT_CONFIG, s);
+            }
         }
         if (CollectionUtils.isNotEmpty(appSettingState.getProjectOptions())) {
             checkVersionEnable(appSettingState, appSettingState.getProjectOptions().get(0).getId());
@@ -336,8 +362,12 @@ public class AppSettingComponent {
             return false;
         }
         this.workspaceCB.removeAllItems();
+        AppSettingState oldAppSetting = getOldAppSetting();
         for (MSWorkSpace s : appSettingState.getWorkSpaceOptions()) {
             this.workspaceCB.addItem(s);
+            if (StringUtils.equalsIgnoreCase(s.getId(), oldAppSetting.getWorkSpace().getId())) {
+                CONCURRENT_HASHMAP.put(OLD_WORKSPACE_CONFIG, s);
+            }
         }
 
         if (CollectionUtils.isNotEmpty(appSettingState.getWorkSpaceOptions())) {
@@ -370,6 +400,9 @@ public class AppSettingComponent {
         this.moduleCB.removeAllItems();
         for (MSModule s : appSettingState.getModuleOptions()) {
             this.moduleCB.addItem(s);
+            if (appSettingState.getModule() != null && StringUtils.equalsIgnoreCase(s.getId(), getOldAppSetting().getModule().getId())) {
+                CONCURRENT_HASHMAP.put(OLD_MODULE_CONFIG, s);
+            }
         }
         return true;
     }
