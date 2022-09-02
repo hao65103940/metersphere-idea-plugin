@@ -1213,6 +1213,11 @@ public class PostmanExporter implements IExporter {
      */
     private Object getGeneric(LinkedHashMap<String, Object> param, PsiType type, String paramName, JSONObject properties, String parentPath, Project project, int curDeepth, int maxDeepth, JSONArray items) {
 
+
+        if (type.getCanonicalText().contains("Object")) {
+            return new JSONObject();
+        }
+
         // 有几个类型参数
         int genericCount = ((PsiClassReferenceType) type).getParameterCount();
         PsiClass outerClass = PsiTypesUtil.getPsiClass(type); // RequestDTO
