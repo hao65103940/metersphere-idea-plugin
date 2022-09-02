@@ -1,5 +1,6 @@
 package org.metersphere.actions;
 
+import com.esotericsoftware.minlog.Log;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
@@ -34,6 +35,7 @@ public abstract class CommonAction extends AnAction {
                 });
             } catch (Throwable throwable) {
                 exception.set(throwable);
+                Log.error("throwableException:" + throwable.getMessage());
                 r.set(false);
             }
         }, "Exporting api to MeterSphere please wait...", true, event.getProject());
