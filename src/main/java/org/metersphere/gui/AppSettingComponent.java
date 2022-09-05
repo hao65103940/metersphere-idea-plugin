@@ -70,15 +70,22 @@ public class AppSettingComponent {
         return JSON.parseObject(PropertiesComponent.getInstance().getValue(OLD_APPSETTING_CONFIG), AppSettingState.class);
     }
 
+    private static boolean isCheckOldAppSetting() {
+        AppSettingState oldAppSetting = getOldAppSetting();
+        return StringUtils.isAnyBlank(oldAppSetting.getMeterSphereAddress(), oldAppSetting.getAccesskey(), oldAppSetting.getAccesskey());
+    }
+
     public AppSettingComponent() {
         AppSettingState appSettingState = appSettingService.getState();
         initData(appSettingState);
         testCon.addActionListener(actionEvent -> {
             if (test(appSettingState)) {
                 if (initWorkSpaceWithProject()) {
-                    workspaceCB.setSelectedItem(CONCURRENT_HASHMAP.get(OLD_WORKSPACE_CONFIG));
-                    projectCB.setSelectedItem(CONCURRENT_HASHMAP.get(OLD_PROJECT_CONFIG));
-                    moduleCB.setSelectedItem(CONCURRENT_HASHMAP.get(OLD_MODULE_CONFIG));
+                    if (!isCheckOldAppSetting()) {
+                        workspaceCB.setSelectedItem(CONCURRENT_HASHMAP.get(OLD_WORKSPACE_CONFIG));
+                        projectCB.setSelectedItem(CONCURRENT_HASHMAP.get(OLD_PROJECT_CONFIG));
+                        moduleCB.setSelectedItem(CONCURRENT_HASHMAP.get(OLD_MODULE_CONFIG));
+                    }
                     Messages.showInfoMessage("sync success!", "Info");
                 } else {
                     Messages.showInfoMessage("sync fail!", "Info");
@@ -279,7 +286,7 @@ public class AppSettingComponent {
         this.projectCB.removeAllItems();
         for (MSProject s : appSettingState.getProjectOptions()) {
             this.projectCB.addItem(s);
-            if (StringUtils.equalsIgnoreCase(s.getId(), getOldAppSetting().getProject().getId())) {
+            if (!isCheckOldAppSetting() && StringUtils.equalsIgnoreCase(s.getId(), getOldAppSetting().getProject().getId())) {
                 CONCURRENT_HASHMAP.put(OLD_PROJECT_CONFIG, s);
             }
         }
@@ -365,7 +372,7 @@ public class AppSettingComponent {
         AppSettingState oldAppSetting = getOldAppSetting();
         for (MSWorkSpace s : appSettingState.getWorkSpaceOptions()) {
             this.workspaceCB.addItem(s);
-            if (StringUtils.equalsIgnoreCase(s.getId(), oldAppSetting.getWorkSpace().getId())) {
+            if (!isCheckOldAppSetting() && StringUtils.equalsIgnoreCase(s.getId(), oldAppSetting.getWorkSpace().getId())) {
                 CONCURRENT_HASHMAP.put(OLD_WORKSPACE_CONFIG, s);
             }
         }
@@ -400,7 +407,7 @@ public class AppSettingComponent {
         this.moduleCB.removeAllItems();
         for (MSModule s : appSettingState.getModuleOptions()) {
             this.moduleCB.addItem(s);
-            if (appSettingState.getModule() != null && StringUtils.equalsIgnoreCase(s.getId(), getOldAppSetting().getModule().getId())) {
+            if (!isCheckOldAppSetting() && appSettingState.getModule() != null && StringUtils.equalsIgnoreCase(s.getId(), getOldAppSetting().getModule().getId())) {
                 CONCURRENT_HASHMAP.put(OLD_MODULE_CONFIG, s);
             }
         }
