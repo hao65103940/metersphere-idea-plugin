@@ -286,7 +286,7 @@ public class AppSettingComponent {
         this.projectCB.removeAllItems();
         for (MSProject s : appSettingState.getProjectOptions()) {
             this.projectCB.addItem(s);
-            if (!isCheckOldAppSetting() && StringUtils.equalsIgnoreCase(s.getId(), getOldAppSetting().getProject().getId())) {
+            if (!isCheckOldAppSetting() && getOldAppSetting().getProject() != null && StringUtils.equalsIgnoreCase(s.getId(), getOldAppSetting().getProject().getId())) {
                 CONCURRENT_HASHMAP.put(OLD_PROJECT_CONFIG, s);
             }
         }
@@ -372,7 +372,7 @@ public class AppSettingComponent {
         AppSettingState oldAppSetting = getOldAppSetting();
         for (MSWorkSpace s : appSettingState.getWorkSpaceOptions()) {
             this.workspaceCB.addItem(s);
-            if (!isCheckOldAppSetting() && StringUtils.equalsIgnoreCase(s.getId(), oldAppSetting.getWorkSpace().getId())) {
+            if (!isCheckOldAppSetting() && oldAppSetting.getWorkSpace() != null && StringUtils.equalsIgnoreCase(s.getId(), oldAppSetting.getWorkSpace().getId())) {
                 CONCURRENT_HASHMAP.put(OLD_WORKSPACE_CONFIG, s);
             }
         }
@@ -407,7 +407,7 @@ public class AppSettingComponent {
         this.moduleCB.removeAllItems();
         for (MSModule s : appSettingState.getModuleOptions()) {
             this.moduleCB.addItem(s);
-            if (!isCheckOldAppSetting() && appSettingState.getModule() != null && StringUtils.equalsIgnoreCase(s.getId(), getOldAppSetting().getModule().getId())) {
+            if (!isCheckOldAppSetting() && appSettingState.getModule() != null && getOldAppSetting().getModule() != null && StringUtils.equalsIgnoreCase(s.getId(), getOldAppSetting().getModule().getId())) {
                 CONCURRENT_HASHMAP.put(OLD_MODULE_CONFIG, s);
             }
         }

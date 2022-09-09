@@ -6,7 +6,7 @@ plugins {
 }
 
 group 'org.intellij.sdk'
-version '1.0.12.2-fg'
+version '1.0.13-fg'
 
 sourceCompatibility = 11
 repositories {
